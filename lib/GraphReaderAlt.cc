@@ -1,91 +1,77 @@
 #include "GraphReaderAlt.h"
 
-
     /* We never use the second parameter ?? */
 std::pair<int, int> GraphReaderAlt::getVertexIdx(Graph &G, std::string vname){
     for(int i = 0; i < G.n; i++)
-        if(G.partA[i].id_ == vname)
+        if(G.partA[i]->id_ == vname)
             return {i, 0};
         
     for(int i = 0; i < G.m; i++)
-        if(G.partP[i].id_ == vname)
+        if(G.partP[i]->id_ == vname)
             return {i, 1};
 
     return {-1, -1};
 }
 
-void GraphReaderAlt::readParititions(Graph &G){
-    std::cin >> G.n;
-    G.partA.resize(G.n);
-    for(int i = 0; i < G.n; i++)
-        std::cin >> G.partA[i].id_ >> G.partA[i].upper_quota_;
+void GraphReaderAlt::readParititions(Graph &G, std::shared_ptr<BipartiteGraph> & BG){
+    BipartiteGraph::ContainerType A = BG->get_A_partition();
+    BipartiteGraph::ContainerType B = BG->get_B_partition();
+    G.n = A.size();
+    G.m = B.size();
+
+    for (auto &ele: A){
+        G.partA.push_back(ele.second);
+    }
     
-    std::cin >> G.m;
-    G.partP.resize(G.m);
-    for(int i = 0; i < G.m; i++)
-        std::cin >> G.partP[i].id_ >> G.partP[i].upper_quota_;
+    for(auto &ele: B){
+        G.partP.push_back(ele.second);
+    }
 }
 
 void GraphReaderAlt::readEdges(Graph &G){
-    std::cin >> G.k;
-    G.edges.resize(G.k+1);
-    for(int i = 1; i <= G.k; i++){
-        int l;
-        std::cin >> l;
-        G.edges[i].resize(l);
-        for(int j = 0; j < l; j++)
-            std::cin >> G.edges[i][j].id1 >> G.edges[i][j].id2;
+    for (auto ele : G.partA) {
+        G.k = std::max(G.k, ele->pref_list_.get_max_rank());
+        for(int i = 0; i < ele->pref_list_.get_max_rank(); i++){
+            if(ele->pref_list_.is_tied(i)){
+                auto tied_list = ele->pref_list_.get_ties(i);
+                for(auto elee: tied_list){
+                    Edge e (ele->id_, elee.vertex->id_);
+                    if(G.rank_edges.find(i+1) == G.rank_edges.end()){
+                        G.rank_edges[i+1] = std::vector<Edge> ();
+                    }
+                    G.rank_edges[i+1].push_back(e);
+                }
+            }
+            else{
+                auto v = ele->pref_list_.at(i);
+                Edge e(ele->id_, v.vertex->id_);
+                if(G.rank_edges.find(i+1) == G.rank_edges.end()){
+                    G.rank_edges[i+1] = std::vector<Edge> ();
+                }
+                G.rank_edges[i+1].push_back(e);
+            }
+        }
     }
 }
 
 void GraphReaderAlt::fillVAdj(Graph &G){
     for(int i = 1; i <= G.k; i++){
-        for(int j = 0; j < G.edges[i].size(); j++){
-            int idx1 = getVertexIdx(G, G.edges[i][j].id1).first, idx2 = getVertexIdx(G, G.edges[i][j].id2).first;
+        for(int j = 0; j < G.rank_edges[i].size(); j++){
+            int idx1 = getVertexIdx(G, G.rank_edges[i][j].id1).first, idx2 = getVertexIdx(G, G.rank_edges[i][j].id2).first;
             if(idx1 == -1 || idx2 == -1) continue;
-            G.partA[idx1].adj_list.push_back(G.edges[i][j].id2);
-            G.partP[idx2].adj_list.push_back(G.edges[i][j].id1);
+            G.partA[idx1]->adj_list.push_back(G.rank_edges[i][j].id2);
+            G.partP[idx2]->adj_list.push_back(G.rank_edges[i][j].id1);
         }
     }
 }
 
-void GraphReaderAlt::readClassification(Graph &G, int idx, bool A){
-    ClassificationListElement c;
-    std::cin >> c.id_ >> c.upper_quota_ >> c.num_vertices;
-    c.vertices.resize(c.num_vertices);
-
-    for (int k = 0; k < c.num_vertices; k++) 
-        std::cin >> c.vertices[k];
-    
-    if(A) G.partA[idx].classifications.add_element(c);
-    else G.partP[idx].classifications.add_element(c);
-}
-
-void GraphReaderAlt::readClassifications(Graph &G){
-    for (int i = 0; i < G.n + G.m; i++){
-        std::string vname;
-        int noClassifications;
-        std::cin >> vname >> noClassifications;
-
-        int idx = getVertexIdx(G, vname).first, part = getVertexIdx(G, vname).second;
-
-        if (idx == -1) continue; // vertex not found
-
-        for (int j = 0; j < noClassifications; j++)
-            if (part == 0)
-                readClassification(G, idx, true);
-            else
-                readClassification(G, idx, false);
-    }
-}
 
 
-Graph GraphReaderAlt::read_graph(){
+Graph GraphReaderAlt::read_graph(std::shared_ptr<BipartiteGraph> & BG){
     Graph G;
-    readParititions(G);
+    readParititions(G, BG);
     readEdges(G);
     fillVAdj(G);
-    readClassifications(G);
     return G; // pass by value
 }
 

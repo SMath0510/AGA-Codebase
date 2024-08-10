@@ -68,10 +68,10 @@ private:
     const char* error_message(const char* prefix, Token got, const std::vector<Token>& expected);
     void read_partition(BipartiteGraph::ContainerType& vmap);
     void read_preference_lists(BipartiteGraph::ContainerType& A, BipartiteGraph::ContainerType& B);
-    void read_classifications(ClassificationList::ContainerType & A, ClassificationList::ContainerType &B); /**/
+    void read_classifications(BipartiteGraph::ContainerType & A); /**/
     void handle_partition(BipartiteGraph::ContainerType& A, BipartiteGraph::ContainerType& B);
     void handle_preference_lists(BipartiteGraph::ContainerType& A, BipartiteGraph::ContainerType& B);
-    void handle_classifications(ClassificationList::ContainerType& A, ClassificationList::ContainerType& B);
+    void handle_classifications(BipartiteGraph::ContainerType& A, BipartiteGraph::ContainerType& B);
 
 public:
     explicit GraphReader(std::istream& in);

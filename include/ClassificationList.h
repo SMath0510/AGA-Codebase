@@ -42,12 +42,6 @@ public:
     void add_element(ClassificationListElement c);
 
     ClassificationListElement operator[](int index);
-    /* return classification_list[index] */
-
-/*
-    friend std::ostream& operator<<(std::ostream& out, ClassificationList& pl);
-    friend std::ostream& operator<<(std::ostream& out, ClassificationList* pl);
-*/
 };
 
 #endif

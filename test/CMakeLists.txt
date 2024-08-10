@@ -1,14 +1,22 @@
 cmake_minimum_required(VERSION 3.11)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+
+message(STATUS "IN TEST")
+
 include(FetchContent)
+
+message(STATUS "FETCHED CONTENT")
 
 FetchContent_Declare(Catch2
   GIT_REPOSITORY https://github.com/catchorg/Catch2.git
   GIT_TAG        v3.3.2)
 
+message(STATUS "DECLARED")
 # make Catch2 available
 FetchContent_MakeAvailable(Catch2)
+
+message(STATUS "CATCH2 MADE AVAILABLE")
 
 # add Catch2 include directory to path
 list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/contrib)

@@ -1,6 +1,12 @@
 #include "Vertex.h"
 #include <sstream>
 
+Vertex :: Vertex(){}
+
+Vertex::Vertex(const IdType& id, ClassificationListElement &cle)
+    : id_(id), temp_stored(cle)
+{}
+
 Vertex::Vertex(const IdType& id)
     : Vertex(id, id, 0, 1, false, false)
 {}

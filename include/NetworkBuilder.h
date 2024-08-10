@@ -4,6 +4,7 @@
 #include "GraphDefs.h"
 #include "Vertex.h"
 #include <iostream>
+#include <fstream>
 #include <utility>
 #include <string>
 #include <limits.h>
@@ -13,27 +14,22 @@ class NetworkBuilder{
     private:
 
     std::pair<int, int> getVertexIdx(Graph &G, std::string vname);
-
-    // Fix this into shorter code & can shift this to the Graph Reader 
+    
     void addFundamenalClasses(Graph &G, int idx, bool isA);
 
-    // This is useless 
-    void sortClassifications(std::vector<Vertex> &part, int idx);
+    void sortClassifications(std::vector<VertexPtr> &part, int idx);
     
-    void enumerateClassifications(std::vector<Vertex> &part, int idx);
+    void enumerateClassifications(std::vector<VertexPtr> &part, int idx);
 
     std::vector<int> initialiseRoots(ClassificationList &classifications, std::vector<bool> &usedClassification, int &usedClassifications);
 
     int findSmallestUnusedIdx(ClassificationList &classifications, std::vector<bool> &usedClassification);
 
-    // Use pass by reference ??
     bool violatingClassifications(ClassificationListElement c1, ClassificationListElement c2);
 
-    // Use pass by reference ??
     bool isChild(ClassificationListElement c1, ClassificationListElement c2);
 
-    // Use pass by reference and return everything instead of just exiting ??
-    void isNonLaminar(ClassificationListElement c, std::vector<int> roots, ClassificationList classifications);
+    void isNonLaminar(ClassificationListElement c, std::vector<int> roots, ClassificationList classifications, std::ofstream &file_out);
 
     std::vector<int> findChildren(ClassificationList classifications, ClassificationListElement c, std::vector<int> roots);
 
@@ -41,9 +37,9 @@ class NetworkBuilder{
 
     std::vector<int> updateRoots(std::vector<int> roots, std::vector<int> children, int smallestUnusedIdx);
 
-    void buildClassificationTree(std::vector<Vertex> &part, int idx);
+    void buildClassificationTree(std::vector<VertexPtr> &part, int idx, std::ofstream &file_out, bool& isLaminar);
 
-    void reenumerateTree(Vertex &v, int &offset);
+    void reenumerateTree(VertexPtr &v, int &offset);
 
     int reenumerateVertices(Graph &G);
 
@@ -51,7 +47,7 @@ class NetworkBuilder{
 
     public:
 
-    void initBuild(Graph &G);
+    void initBuild(Graph &G, std::ofstream &file_out);
 
     void buildNetwork(Graph &G);
 };

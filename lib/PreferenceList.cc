@@ -154,3 +154,7 @@ std::ostream& operator<<(std::ostream& out, const PreferenceList* pl) {
 
     return out << stmp.str();
 }
+
+int PreferenceList::get_max_rank(){
+    return pref_list_.size();
+}

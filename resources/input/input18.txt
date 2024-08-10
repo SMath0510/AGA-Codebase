@@ -1,0 +1,23 @@
+@PartitionA
+a1(3) ;
+@End
+
+@PartitionB
+b1(1), b2(1), b3(1) ;
+@End
+
+@PreferenceListsA
+a1 : b3 ;
+@End
+
+@PreferenceListsB
+
+@End
+
+@ClassificationListA
+
+@End
+
+@ClassificationListB
+
+@End

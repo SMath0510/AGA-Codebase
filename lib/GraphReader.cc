@@ -4,6 +4,7 @@
 #include "Utils.h"
 #include <cstdlib>
 #include <stdexcept>
+#include <iostream>
 
 /// Lexer class defined here
 
@@ -48,8 +49,8 @@ Token Lexer::next_token() {
     if (ch_ == ';')   { read_character(); return TOK_SEMICOLON; }
     if (ch_ == '(')   { read_character(); return TOK_LEFT_BRACE; }
     if (ch_ == ')')   { read_character(); return TOK_RIGHT_BRACE; }
-    if (ch_ == '{')   { read_character(); return TOK_CURLY_LEFT_BRACE; }
-    if (ch_ == '}')   { read_character(); return TOK_CURLY_RIGHT_BRACE; }
+    if (ch_ == '{')   { read_character(); return TOK_CURLY_LEFT_BRACE;}
+    if (ch_ == '}')   { read_character(); return TOK_CURLY_RIGHT_BRACE;}
 
     // a directive or a string
     if (isalnum(ch_)) {
@@ -201,7 +202,8 @@ void GraphReader::read_preference_lists(BipartiteGraph::ContainerType& A, Bipart
                     if (b_vertex->get_lower_quota() > 0) {
                         pref_list_lq.emplace_back(b_vertex);
                     }
-                    // if there are more vertices, they must
+                    //The code you provided is a comment in a programming language. It seems to be explaining that if there are more vertices, they should be delimited using commas. Comments are used to document code and provide explanations for other developers or for future reference.
+                    //  if there are more vertices, they must
                     // be delimited using commas
                     if (curtok_ != TOK_RIGHT_BRACE) {
                         match(TOK_COMMA);
@@ -237,6 +239,74 @@ void GraphReader::read_preference_lists(BipartiteGraph::ContainerType& A, Bipart
     match(TOK_END);
 }
 
+/*
+@ClassificationList(A|B)
+a1 {x1,x2,x3} (0,1);
+a1 {x4,x5} (0,1);
+a2 {x3} (1);
+@End
+*/
+
+void GraphReader::read_classifications(BipartiteGraph::ContainerType& vcmap) {
+    // read the vertices in the partion
+    while (curtok_ != TOK_AT) {
+        std::string v = lexer_->get_lexeme(); // vertex name
+        match(TOK_STRING);
+        match(TOK_COLON);
+
+        const auto& v_vertex = vcmap[v];
+        int lower_quota = 0, upper_quota = 1;
+        ClassificationListElement vtx_classification_list;
+        // eat '{'
+        match(TOK_CURLY_LEFT_BRACE);
+
+        vtx_classification_list.id_ = v;
+        while(curtok_ != TOK_CURLY_RIGHT_BRACE){
+            std::string v_ = lexer_ -> get_lexeme();
+            match(TOK_STRING); // match this vertex name
+            // string == IdType
+            vtx_classification_list.vertices.push_back(v_);
+            if (curtok_ == TOK_COMMA) {
+                match(TOK_COMMA); // consume ','
+            }
+        }
+
+        match(TOK_CURLY_RIGHT_BRACE); // match '}'
+        
+        match(TOK_LEFT_BRACE); // match '('
+        
+        vtx_classification_list.upper_quota_ = to_integer(lexer_->get_lexeme());
+        match(TOK_STRING);
+
+        // check if this vertex has a lower quota as well
+        if (curtok_ == TOK_COMMA) {
+            match(TOK_COMMA);
+
+            // the quota read first was the lower quota
+            vtx_classification_list.lower_quota_ = upper_quota;
+            vtx_classification_list.upper_quota_ = to_integer(lexer_->get_lexeme());
+            match(TOK_STRING);
+        }
+
+        // eat ')'
+        match(TOK_RIGHT_BRACE);
+        
+        vtx_classification_list.num_vertices = vtx_classification_list.vertices.size();
+        v_vertex->classifications.add_element(vtx_classification_list);
+
+        match(TOK_SEMICOLON);
+
+    }
+    
+    if (curtok_ != TOK_AT) {
+        throw ReaderException("Unexpected end of file.");
+    }
+
+    // end of this directive
+    match(TOK_AT);
+    match(TOK_END);
+}
+
 void GraphReader::handle_partition(BipartiteGraph::ContainerType& A, BipartiteGraph::ContainerType& B) {
     if (curtok_ == TOK_PARTITION_A) {
         match(TOK_PARTITION_A);
@@ -258,6 +328,18 @@ void GraphReader::handle_preference_lists(BipartiteGraph::ContainerType& A, Bipa
         read_preference_lists(B, A);
     } else {
         throw ReaderException(error_message("", curtok_, {TOK_PREF_LISTS_A, TOK_PREF_LISTS_B}));
+    }
+}
+
+void GraphReader::handle_classifications(BipartiteGraph::ContainerType& A, BipartiteGraph::ContainerType& B) {
+    if (curtok_ == TOK_CLASSIFICATION_LIST_A) {
+        match(TOK_CLASSIFICATION_LIST_A);
+        read_classifications(A);
+    } else if(curtok_ == TOK_CLASSIFICATION_LIST_B) {
+        match(TOK_CLASSIFICATION_LIST_B);
+        read_classifications(B);
+    } else {
+        throw ReaderException(error_message("", curtok_, {TOK_CLASSIFICATION_LIST_A, TOK_CLASSIFICATION_LIST_B}));
     }
 }
 
@@ -290,6 +372,22 @@ std::shared_ptr<BipartiteGraph> GraphReader::read_graph() {
     } else {
         throw ReaderException(error_message("duplicate preference listing", curtok_,
                                             {(pref_lists == TOK_PREF_LISTS_A) ? TOK_PREF_LISTS_B : TOK_PREF_LISTS_A}));
+    }
+
+    if(curtok_ == TOK_AT){
+        // read the classifications lists
+        match(TOK_AT);
+        Token classification_list_ = curtok_;
+        handle_classifications(A, B);
+
+        match(TOK_AT);
+        // shouldn't have preference lists twice
+        if (curtok_ != classification_list_) {
+            handle_classifications(A, B);
+        } else {
+            throw ReaderException(error_message("duplicate classifications listing", curtok_,
+                                                {(curtok_ == TOK_CLASSIFICATION_LIST_A) ? TOK_CLASSIFICATION_LIST_B : TOK_CLASSIFICATION_LIST_A}));
+        }
     }
 
     return std::make_shared<BipartiteGraph>(A, B);

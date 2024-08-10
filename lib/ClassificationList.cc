@@ -1,4 +1,5 @@
 #include "ClassificationList.h"
+#include "Vertex.h"
 #include <algorithm>
 #include <cassert>
 
@@ -38,9 +39,11 @@ ClassificationList::ConstIterator ClassificationList::end() const noexcept {
     return classification_list_.end();
 }
 
-void ClassificationList::add_element(ClassificationListElement c){
+/// add a vertex to the list of matched partners
+void ClassificationList::add_element(ClassificationListElement c) {
     classification_list_.push_back(c);
 }
+
 
 ClassificationListElement ClassificationList::operator[](int index){
     return classification_list_[index];

@@ -86,6 +86,7 @@ public:
     // get PrefSC, which is the strict list obtained from PrefS(a) by
     //  omitting all the non-critical vertices
     PreferenceList get_prefSC() const;
+    int get_max_rank();
 
     friend std::ostream& operator<<(std::ostream& out, const PreferenceList& pl);
     friend std::ostream& operator<<(std::ostream& out, const PreferenceList* pl);

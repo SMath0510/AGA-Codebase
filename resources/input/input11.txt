@@ -1,0 +1,31 @@
+@PartitionA
+a1(3), a2(5), a3(5) ;
+@End
+
+@PartitionB
+b1(2), b2(2), b3(2), b4(1), b5(1) ;
+@End
+
+@PreferenceListsA
+a1 : b4, b5 ;
+a2 : b4 ;
+a3 : b4 ;
+@End
+
+@PreferenceListsB
+
+@End
+
+@ClassificationListA
+a1 : {b4} (1) ;
+a1 : {b5} (1) ;
+
+@End
+
+@ClassificationListB
+b4 : {a1} (1) ;
+b4 : {a2, a3} (2) ;
+b4 : {a2} (1) ;
+b4 : {a3} (1) ;
+
+@End

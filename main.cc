@@ -14,6 +14,7 @@
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
+#include <string.h>
 
 template<typename T>
 bool compute_matching(bool A_proposing, const char* input_file,
@@ -71,6 +72,8 @@ int main(int argc, char* argv[]) {
     bool A_proposing = true;
     const char* input_file = nullptr;
     const char* output_file = nullptr;
+    char* log_file = nullptr;
+
 
     opterr = 0;
     // choose the proposing partition using -A and -B
@@ -79,7 +82,7 @@ int main(int argc, char* argv[]) {
     // -r and -h compute the resident and hopsital heuristic for an HRLQ instance
     // -i is the path to the input graph, -o is the path where the matching
     // computed should be stored
-    while ((c = getopt(argc, argv, "ABspmyelri:o:")) != -1) {
+    while ((c = getopt(argc, argv, "ABLspmyelrqi:o:")) != -1) {
         switch (c) {
             case 'A': A_proposing = true; break;
             case 'B': A_proposing = false; break;
@@ -90,18 +93,17 @@ int main(int argc, char* argv[]) {
             case 'e': compute_ehrlq = true; break;
             case 'l': compute_popular_lq = true; break;
             case 'r': compute_critical_rsm = true; break;
-            // case 'q': compute_matching_classifications = true; break;
+            case 'q': compute_matching_classifications = true; break;
             case 'i': input_file = optarg; break;
             case 'o': output_file = optarg; break;
+            case 'L': log_file = optarg; break;
             case '?':
-                if (optopt == 'i') {
-                    std::cerr << "Option -i requires an argument.\n";
-                } else if (optopt == 'o') {
-                    std::cerr << "Option -o requires an argument.\n";
+                if (optopt == 'i' || optopt == 'o' || optopt == 'L') {
+                    std::cerr << "Option -" << static_cast<char>(optopt) << " requires an argument.\n";
                 } else {
                     std::cerr << "Unknown option: " << static_cast<char>(optopt) << '\n';
                 }
-                break;
+                return 1;
             default: break;
         }
     }
@@ -122,15 +124,36 @@ int main(int argc, char* argv[]) {
     } else if(compute_critical_rsm) {
         status = compute_matching<CriticalRSM>(A_proposing, input_file, output_file);
     } else if(compute_matching_classifications){
-        // GraphReaderAlt document_parser;
-        // Graph G = document_parser.read_graph();
-        // G.printEdges();
-        // NetworkBuilder builder;
-        // builder.initBuild(G);
-        // builder.buildNetwork(G);
-        // // G.printNetwork();
-        // Algorithm algorunner;
-        // algorunner.runAlgorithm(G);
+        auto cin_buf = std::cin.rdbuf(); // save pointer to std::cin buffer
+        auto cout_buf = std::cout.rdbuf(); // save pointer to std::cout buffer
+
+        std::ifstream filein(input_file);
+        std::ofstream fileout(output_file);
+        std::ofstream logout(log_file ? log_file : "log.log");
+        
+
+        if (input_file) {
+            std::cin.rdbuf(filein.rdbuf());
+        }
+
+        if (output_file) {
+            std::cout.rdbuf(fileout.rdbuf());
+        }
+
+        std::shared_ptr<BipartiteGraph> BG = GraphReader(std::cin).read_graph();
+
+        /* Transforming and working ahead with computing the Matching */
+        GraphReaderAlt document_parser;
+        Graph G = document_parser.read_graph(BG);
+        NetworkBuilder builder;
+        builder.initBuild(G, fileout);
+        builder.buildNetwork(G); // Graph Network Built
+        Algorithm algorunner;
+        algorunner.runAlgorithm(G, fileout, true, logout); // Algorithm being run on Graph
+        fileout.close();
+        filein.close();
+        logout.close();
+        /* Can make this into a Matching file and use it later accordingly */
     }
 
     return status ? 0 : 1;

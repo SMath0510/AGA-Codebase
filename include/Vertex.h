@@ -14,20 +14,22 @@ class Vertex {
 private:
     IdType id_;                 // id of this vertex
     IdType cloned_for_id_;      // id of the vertex this was cloned for
-    unsigned lower_quota_;           // least number of partners to this vertex
-    unsigned upper_quota_;           // maximum number of partners to this vertex
+    unsigned lower_quota_ = 0;           // least number of partners to this vertex
+    unsigned upper_quota_ = 1;           // maximum number of partners to this vertex
     bool dummy_;                // is this a dummy vertex
     bool last_resort_;          // is this a last resort vertex
-    int index_offset;
-    std::vector<IdType> adj_list;
-    ClassificationList classifications; 
+    int index_offset;           // stores the index offset of the vertex (used in classification analysis)
+    std::vector<IdType> adj_list;  // adjacency list of a vertex (can make this into a seperate file as interface like preference list if needed) Works without that as well
+    ClassificationList classifications; // stores the classification list of the vertex 
+    ClassificationListElement temp_stored; // TEMP storage of the classificationList element
 
-    Tree classification_tree;
+    Tree classification_tree;   // The classification Tree build from the list for the given vertex
     PreferenceList pref_list_;  // preference list according to priority
     PreferenceList pref_list_lq_;  // preference list containing LQ vertices
 
 public:
-    explicit Vertex();
+    Vertex();
+    explicit Vertex(const IdType& id, ClassificationListElement &cle);
     explicit Vertex(const IdType& id);
     explicit Vertex(const IdType& id, unsigned upper_quota);
     explicit Vertex(const IdType& id, unsigned lower_quota,
@@ -53,14 +55,16 @@ public:
     
     PreferenceList& get_preference_list_lq();
     const PreferenceList& get_preference_list_lq() const;
+
     /*
-    {
-        classification_tree.classificationIdx[id_name] = value;
-    }
+        Declaring the below classes as friend
+        Another approach is to make set get functions and build an interface for editing and accessing these variables
+        Both approaches work !! 
     */
     friend class Algorithm; /**/
     friend class NetworkBuilder; /**/
     friend class GraphReaderAlt; /**/
+    friend class GraphReader; /**/
 };
 
 /// print this vertex in the format v: p1, ..., pk
